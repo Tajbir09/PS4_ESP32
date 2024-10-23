@@ -1,0 +1,87 @@
+// Include necessary libraries
+#include <Arduino.h>
+#include <PS4Controller.h>
+
+// Define motor control pins (adjust these to match your wiring)
+const int leftMotorPwmPin = 18;        // PWM pin for left motor
+const int leftMotorDirectionPin = 19;  // Direction pin for left motor
+const int rightMotorPwmPin = 21;       // PWM pin for right motor
+const int rightMotorDirectionPin = 22; // Direction pin for right motor
+
+// If using enable pins on BTS7960 (optional)
+const int leftMotorEnablePin = 23;     // Enable pin for left motor driver
+const int rightMotorEnablePin = 25;    // Enable pin for right motor driver
+
+// PWM settings
+const int freq = 5000;           // PWM frequency
+const int pwmResolution = 8;     // PWM resolution (bits)
+const int pwmChannelLeft = 0;    // PWM channel for left motor
+const int pwmChannelRight = 1;   // PWM channel for right motor
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize motor control pins
+  pinMode(leftMotorDirectionPin, OUTPUT);
+  pinMode(rightMotorDirectionPin, OUTPUT);
+
+  // Initialize motor enable pins (if used)
+  pinMode(leftMotorEnablePin, OUTPUT);
+  pinMode(rightMotorEnablePin, OUTPUT);
+  digitalWrite(leftMotorEnablePin, HIGH);   // Enable left motor driver
+  digitalWrite(rightMotorEnablePin, HIGH);  // Enable right motor driver
+
+  // Configure PWM functionalities for ESP32
+  ledcSetup(pwmChannelLeft, freq, pwmResolution);
+  ledcSetup(pwmChannelRight, freq, pwmResolution);
+
+  // Attach the PWM channels to the GPIO pins
+  ledcAttachPin(leftMotorPwmPin, pwmChannelLeft);
+  ledcAttachPin(rightMotorPwmPin, pwmChannelRight);
+
+  // Initialize the PS4 controller
+  if (PS4.begin()) {
+    Serial.println("PS4 controller is ready to connect.");
+  } else {
+    Serial.println("Failed to initialize PS4 controller.");
+  }
+}
+
+void loop() {
+  if (PS4.isConnected()) {
+    // Read analog stick values (-128 to 127)
+    int leftStickY = PS4.LStickY();
+    int rightStickY = PS4.RStickY();
+
+    // Map stick values to PWM duty cycle (-255 to 255)
+    int leftMotorSpeed = map(leftStickY, -128, 127, -255, 255);
+    int rightMotorSpeed = map(rightStickY, -128, 127, -255, 255);
+
+    // Control motors
+    controlMotor(pwmChannelLeft, leftMotorDirectionPin, leftMotorSpeed);
+    controlMotor(pwmChannelRight, rightMotorDirectionPin, rightMotorSpeed);
+
+    // Optional: Print values for debugging
+    /*
+    Serial.print("Left Stick Y: ");
+    Serial.print(leftStickY);
+    Serial.print(" -> Left Motor Speed: ");
+    Serial.println(leftMotorSpeed);
+
+    Serial.print("Right Stick Y: ");
+    Serial.print(rightStickY);
+    Serial.print(" -> Right Motor Speed: ");
+    Serial.println(rightMotorSpeed);
+    */
+  }
+}
+
+void controlMotor(int pwmChannel, int directionPin, int speed) {
+  if (speed >= 0) {
+    digitalWrite(directionPin, HIGH);
+    ledcWrite(pwmChannel, speed);
+  } else {
+    digitalWrite(directionPin, LOW);
+    ledcWrite(pwmChannel, -speed);
+  }
+}
