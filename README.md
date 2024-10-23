@@ -38,7 +38,7 @@ This project involves building a soccer robot controlled by a PS4 DualShock cont
 - **ESP32 Development Board**
   - A microcontroller with built-in Wi-Fi and Bluetooth capabilities.
 
-- **BTS7960 Motor Drivers (2x)**
+- **BTS7960 Motor Driver Modules (2x)**
   - High-current motor drivers capable of handling up to 43A, suitable for controlling DC motors.
 
 - **DC Motors (4x)**
@@ -53,7 +53,7 @@ This project involves building a soccer robot controlled by a PS4 DualShock cont
 - **Jumper Wires**
   - For making connections between components.
 
-- **Logic Level Converters (Optional)**
+- **Logic Level Converters (Optional but Recommended)**
   - To safely interface 3.3V logic (ESP32) with 5V logic (BTS7960).
 
 - **Miscellaneous Components**
@@ -76,7 +76,7 @@ This project involves building a soccer robot controlled by a PS4 DualShock cont
 
 ## Circuit Diagram
 
-*Note: Actual circuit diagrams are not included here. Please refer to wiring instructions in the next section for detailed connections.*
+*Note: Actual circuit diagrams are not included here. Please refer to the wiring instructions in the next section for detailed connections.*
 
 ---
 
@@ -129,64 +129,125 @@ This project involves building a soccer robot controlled by a PS4 DualShock cont
 
 **Note:** You need to make connections for two BTS7960 motor drivers—one for the left motors and one for the right motors.
 
-#### **ESP32 to Left BTS7960 Driver**
+#### **ESP32 Pin Assignments**
 
-- **PWM Pin (RPWM)**
-  - `GPIO 18` (leftMotorPwmPin) to **RPWM** on BTS7960.
+```cpp
+// Define motor control pins
+const int leftMotorPwmPin = 18;        // ESP32 GPIO 18
+const int leftMotorDirectionPin = 19;  // ESP32 GPIO 19
+const int rightMotorPwmPin = 21;       // ESP32 GPIO 21
+const int rightMotorDirectionPin = 22; // ESP32 GPIO 22
 
-- **Direction Pin (LPWM)**
-  - `GPIO 19` (leftMotorDirectionPin) to **LPWM** on BTS7960.
+// Enable pins (optional)
+const int leftMotorEnablePin = 23;     // ESP32 GPIO 23
+const int rightMotorEnablePin = 25;    // ESP32 GPIO 25
+```
 
-- **Enable Pins (R_EN and L_EN)**
-  - **Option 1:** Connect both **R_EN** and **L_EN** to `GPIO 23` (leftMotorEnablePin). Set pin HIGH in code to enable.
-  - **Option 2:** Tie both **R_EN** and **L_EN** directly to 5V (always enabled).
+#### **A. ESP32 Connections**
 
-- **VCC and GND**
-  - Connect **VCC** to 5V (logic supply).
-  - Connect **GND** to common ground.
+##### **1. Left Motor Driver Connections**
 
-#### **ESP32 to Right BTS7960 Driver**
+- **PWM Pin**
+  - ESP32 GPIO 18 (`leftMotorPwmPin`) to **RPWM** on BTS7960 Left Driver (through logic level converter if used)
 
-- **PWM Pin (RPWM)**
-  - `GPIO 21` (rightMotorPwmPin) to **RPWM** on BTS7960.
+- **Direction Pin**
+  - ESP32 GPIO 19 (`leftMotorDirectionPin`) to **LPWM** on BTS7960 Left Driver (through logic level converter if used)
 
-- **Direction Pin (LPWM)**
-  - `GPIO 22` (rightMotorDirectionPin) to **LPWM** on BTS7960.
+- **Enable Pins (Optional)**
+  - ESP32 GPIO 23 (`leftMotorEnablePin`) to both **R_EN** and **L_EN** on BTS7960 Left Driver (through logic level converter if used)
+  - Alternatively, tie **R_EN** and **L_EN** directly to 5V to always enable the driver
 
-- **Enable Pins (R_EN and L_EN)**
-  - **Option 1:** Connect both **R_EN** and **L_EN** to `GPIO 25` (rightMotorEnablePin). Set pin HIGH in code to enable.
-  - **Option 2:** Tie both **R_EN** and **L_EN** directly to 5V (always enabled).
+- **Ground**
+  - Connect ESP32 GND to BTS7960 Left Driver GND (common ground)
 
-- **VCC and GND**
-  - Connect **VCC** to 5V (logic supply).
-  - Connect **GND** to common ground.
+##### **2. Right Motor Driver Connections**
 
-#### **Logic Level Considerations**
+- **PWM Pin**
+  - ESP32 GPIO 21 (`rightMotorPwmPin`) to **RPWM** on BTS7960 Right Driver (through logic level converter if used)
 
-- **ESP32 Logic Level:** 3.3V
-- **BTS7960 Logic Level:** 5V
-- **Solution:** Use logic level converters to safely interface the ESP32 with the BTS7960 driver if necessary.
+- **Direction Pin**
+  - ESP32 GPIO 22 (`rightMotorDirectionPin`) to **LPWM** on BTS7960 Right Driver (through logic level converter if used)
+
+- **Enable Pins (Optional)**
+  - ESP32 GPIO 25 (`rightMotorEnablePin`) to both **R_EN** and **L_EN** on BTS7960 Right Driver (through logic level converter if used)
+  - Alternatively, tie **R_EN** and **L_EN** directly to 5V
+
+- **Ground**
+  - Connect ESP32 GND to BTS7960 Right Driver GND (common ground)
+
+#### **B. Logic Level Converter Connections (If Used)**
+
+- **ESP32 Side (3.3V Logic)**
+  - Connect ESP32 GPIO pins to the **LV** (Low Voltage) side of the logic level converter
+  - Connect **LV** to ESP32 3.3V
+  - Connect **GND** to ESP32 GND
+
+- **BTS7960 Side (5V Logic)**
+  - Connect **HV** (High Voltage) to 5V supply
+  - Connect **GND** to common ground
+  - Connect **HV** side outputs to BTS7960 input pins (**RPWM**, **LPWM**, **R_EN**, **L_EN**)
+
+#### **C. BTS7960 Motor Driver Connections**
+
+##### **1. Left BTS7960 Motor Driver**
+
+- **Logic Supply Voltage**
+  - Connect **VCC** to 5V supply
+
+- **Ground**
+  - Connect **GND** to common ground
+
+- **Motor Power Supply**
+  - Connect **B+** to positive terminal of motor power supply
+  - Connect **B-** to negative terminal (ground) of motor power supply
+
+- **Motor Output**
+  - Connect **M+** and **M-** to the left motors (connected in parallel)
+
+##### **2. Right BTS7960 Motor Driver**
+
+- **Logic Supply Voltage**
+  - Connect **VCC** to 5V supply
+
+- **Ground**
+  - Connect **GND** to common ground
+
+- **Motor Power Supply**
+  - Connect **B+** to positive terminal of motor power supply
+  - Connect **B-** to negative terminal (ground) of motor power supply
+
+- **Motor Output**
+  - Connect **M+** and **M-** to the right motors (connected in parallel)
 
 ### 2. Motor Connections
 
-- **Left Motors**
-  - Connect the two left motors in parallel to the **M+** and **M-** terminals of the left BTS7960 driver.
+#### **1. Left Motors (2 units)**
 
-- **Right Motors**
-  - Connect the two right motors in parallel to the **M+** and **M-** terminals of the right BTS7960 driver.
+- **Connection**
+  - Connect the two left motors in parallel
+  - Connect their positive leads together and negative leads together
+  - Connect to **M+** and **M-** of the left BTS7960 driver
+
+#### **2. Right Motors (2 units)**
+
+- **Connection**
+  - Connect the two right motors in parallel
+  - Connect their positive leads together and negative leads together
+  - Connect to **M+** and **M-** of the right BTS7960 driver
 
 ### 3. Power Supply
 
 - **Motor Power Supply**
-  - Connect the positive terminal to **B+** and negative terminal to **B-** on both BTS7960 drivers.
-  - Ensure the supply voltage matches the motors' voltage rating.
+  - Positive terminal to **B+** on both BTS7960 drivers
+  - Negative terminal to **B-** on both BTS7960 drivers and to common ground
+  - Ensure the voltage matches the motor specifications
 
 - **ESP32 Power Supply**
-  - Power the ESP32 via USB or a separate regulated 5V supply.
-  - **Important:** Do not power the ESP32 directly from the motor power supply.
+  - Power the ESP32 via USB or a separate regulated 5V supply
+  - Connect ESP32 GND to common ground
 
 - **Common Ground**
-  - Connect all grounds (ESP32, BTS7960 drivers, and power supplies) together to maintain a common reference point.
+  - Connect all grounds (ESP32, BTS7960 drivers, motor power supply) together to maintain a common reference point
 
 ---
 
@@ -194,7 +255,7 @@ This project involves building a soccer robot controlled by a PS4 DualShock cont
 
 ### 1. Overview
 
-The provided code initializes the ESP32, sets up motor control via PWM, and interfaces with the PS4 controller to control the robot's movement based on analog stick inputs.
+The provided code initializes the ESP32, sets up motor control using `analogWrite()`, and interfaces with the PS4 controller to control the robot's movement based on analog stick inputs.
 
 ### 2. Code Breakdown
 
@@ -208,50 +269,35 @@ The provided code initializes the ESP32, sets up motor control via PWM, and inte
 
 ```cpp
 // Define motor control pins
-const int leftMotorPwmPin = 18;
-const int leftMotorDirectionPin = 19;
-const int rightMotorPwmPin = 21;
-const int rightMotorDirectionPin = 22;
+const int leftMotorPwmPin = 18;        // PWM pin for left motor
+const int leftMotorDirectionPin = 19;  // Direction pin for left motor
+const int rightMotorPwmPin = 21;       // PWM pin for right motor
+const int rightMotorDirectionPin = 22; // Direction pin for right motor
+
+// Enable pins (optional)
+const int leftMotorEnablePin = 23;     // Enable pin for left motor driver
+const int rightMotorEnablePin = 25;    // Enable pin for right motor driver
 ```
 
 - Assigns GPIO pins for motor PWM and direction control.
 
 ```cpp
-// Enable pins (if used)
-const int leftMotorEnablePin = 23;
-const int rightMotorEnablePin = 25;
-```
-
-- Assigns GPIO pins for enabling the motor drivers.
-
-```cpp
-// PWM settings
-const int freq = 5000;
-const int pwmResolution = 8;
-const int pwmChannelLeft = 0;
-const int pwmChannelRight = 1;
-```
-
-- Configures PWM frequency, resolution, and channels.
-
-```cpp
 void setup() {
   Serial.begin(115200);
+
   // Initialize motor control pins
+  pinMode(leftMotorPwmPin, OUTPUT);
   pinMode(leftMotorDirectionPin, OUTPUT);
+  pinMode(rightMotorPwmPin, OUTPUT);
   pinMode(rightMotorDirectionPin, OUTPUT);
-  // Initialize motor enable pins
+
+  // Initialize motor enable pins (if used)
   pinMode(leftMotorEnablePin, OUTPUT);
   pinMode(rightMotorEnablePin, OUTPUT);
-  digitalWrite(leftMotorEnablePin, HIGH);
-  digitalWrite(rightMotorEnablePin, HIGH);
-  // Configure PWM functionalities
-  ledcSetup(pwmChannelLeft, freq, pwmResolution);
-  ledcSetup(pwmChannelRight, freq, pwmResolution);
-  // Attach the PWM channels
-  ledcAttachPin(leftMotorPwmPin, pwmChannelLeft);
-  ledcAttachPin(rightMotorPwmPin, pwmChannelRight);
-  // Initialize PS4 controller
+  digitalWrite(leftMotorEnablePin, HIGH);   // Enable left motor driver
+  digitalWrite(rightMotorEnablePin, HIGH);  // Enable right motor driver
+
+  // Initialize the PS4 controller
   if (PS4.begin()) {
     Serial.println("PS4 controller is ready to connect.");
   } else {
@@ -260,20 +306,39 @@ void setup() {
 }
 ```
 
-- Sets up serial communication, initializes pins, configures PWM, and starts the PS4 controller connection.
+- Sets up serial communication, initializes pins, and starts the PS4 controller connection.
 
 ```cpp
 void loop() {
   if (PS4.isConnected()) {
-    // Read analog stick values
+    // Read analog stick values (-128 to 127)
     int leftStickY = PS4.LStickY();
     int rightStickY = PS4.RStickY();
-    // Map stick values to motor speeds
-    int leftMotorSpeed = map(leftStickY, -128, 127, -255, 255);
-    int rightMotorSpeed = map(rightStickY, -128, 127, -255, 255);
+
+    // Map stick values to PWM duty cycle (0 to 255)
+    int leftMotorSpeed = map(abs(leftStickY), 0, 128, 0, 255);
+    int rightMotorSpeed = map(abs(rightStickY), 0, 128, 0, 255);
+
+    // Determine motor directions
+    bool leftMotorForward = leftStickY >= 0;
+    bool rightMotorForward = rightStickY >= 0;
+
     // Control motors
-    controlMotor(pwmChannelLeft, leftMotorDirectionPin, leftMotorSpeed);
-    controlMotor(pwmChannelRight, rightMotorDirectionPin, rightMotorSpeed);
+    controlMotor(leftMotorPwmPin, leftMotorDirectionPin, leftMotorSpeed, leftMotorForward);
+    controlMotor(rightMotorPwmPin, rightMotorDirectionPin, rightMotorSpeed, rightMotorForward);
+
+    // Optional: Print values for debugging
+    /*
+    Serial.print("Left Stick Y: ");
+    Serial.print(leftStickY);
+    Serial.print(" -> Left Motor Speed: ");
+    Serial.println(leftMotorSpeed);
+
+    Serial.print("Right Stick Y: ");
+    Serial.print(rightStickY);
+    Serial.print(" -> Right Motor Speed: ");
+    Serial.println(rightMotorSpeed);
+    */
   }
 }
 ```
@@ -281,14 +346,9 @@ void loop() {
 - In the main loop, checks for PS4 controller connection, reads analog stick inputs, maps them to motor speeds, and controls the motors accordingly.
 
 ```cpp
-void controlMotor(int pwmChannel, int directionPin, int speed) {
-  if (speed >= 0) {
-    digitalWrite(directionPin, HIGH);
-    ledcWrite(pwmChannel, speed);
-  } else {
-    digitalWrite(directionPin, LOW);
-    ledcWrite(pwmChannel, -speed);
-  }
+void controlMotor(int pwmPin, int directionPin, int speed, bool forward) {
+  digitalWrite(directionPin, forward ? HIGH : LOW);
+  analogWrite(pwmPin, speed);
 }
 ```
 
@@ -334,31 +394,42 @@ void controlMotor(int pwmChannel, int directionPin, int speed) {
 ## Troubleshooting
 
 - **Compilation Errors**
-  - **`ledcSetup` Not Declared:**
-    - Ensure ESP32 board support is installed and selected in the Arduino IDE.
+
+  - **`analogWrite` Not Declared:**
+    - Ensure you have updated the ESP32 Arduino Core to version **2.0.0** or later.
+    - Go to **Tools** > **Board** > **Boards Manager...**, search for **"esp32"**, and update if necessary.
+
   - **Library Not Found:**
     - Verify that the PS4-ESP32 library is correctly installed.
 
 - **PS4 Controller Not Connecting**
+
   - **Incorrect Pairing Mode:**
     - Ensure the controller's light bar is flashing rapidly.
+
   - **Bluetooth Issues:**
     - Verify that the ESP32's Bluetooth is functioning.
 
 - **Motors Not Responding**
+
   - **Wiring Issues:**
     - Double-check all connections between the ESP32, BTS7960 drivers, and motors.
+
   - **Enable Pins Not Set:**
     - Ensure the enable pins are set HIGH or connected to 5V.
+
   - **Power Supply:**
     - Confirm that the power supply is adequate for the motors.
 
 - **Motor Direction Incorrect**
+
   - Swap the motor connections on the BTS7960 driver or adjust the logic in the `controlMotor` function.
 
 - **ESP32 Resets or Freezes**
+
   - **Power Issues:**
     - Use a separate, stable power supply for the ESP32.
+
   - **Noise Interference:**
     - Add decoupling capacitors and ensure proper grounding.
 
@@ -368,7 +439,7 @@ void controlMotor(int pwmChannel, int directionPin, int speed) {
 
 - **ESP32 Documentation**
   - [ESP32 Arduino Core Documentation](https://docs.espressif.com/projects/arduino-esp32/en/latest/)
-  - [ESP32 PWM (LEDC) API Reference](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/pwm.html)
+  - [ESP32 PWM (analogWrite) Reference](https://docs.espressif.com/projects/arduino-esp32/en/latest/api/analogwrite.html)
 
 - **PS4-ESP32 Library**
   - [PS4-ESP32 GitHub Repository](https://github.com/aed3/PS4-esp32)
@@ -401,3 +472,7 @@ This project is open-source and available under the [MIT License](https://openso
 ---
 
 **Disclaimer:** This project involves working with electronic components and power supplies. Ensure all safety precautions are followed. The creator is not responsible for any damage or injury resulting from the use of this guide.
+
+---
+
+**Happy Building!** If you have any questions or need further assistance, feel free to reach out.
